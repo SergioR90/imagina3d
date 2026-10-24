@@ -16,6 +16,12 @@
   <!-- SortableJS para Drag & Drop Mobile e Desktop -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
+  <!-- Módulos Imagina3D (scripts clássicos: funcionam também ao abrir o ficheiro localmente) -->
+  <script src="js/pricing.js"></script>
+  <script src="js/makerworld.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/makerworld-ui.js"></script>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -363,6 +369,35 @@
         </p>
       </div>
 
+      <!-- Importação MakerWorld -->
+      <div class="p-5 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-50/70 to-white dark:from-indigo-950/30 dark:to-notion-darkCard shadow-sm">
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <i class="fa-solid fa-cloud-arrow-down text-indigo-500"></i> Importar do MakerWorld
+          <span class="text-[10px] font-normal text-gray-500">tempos e consumos pré-preenchidos</span>
+        </h3>
+        <div class="mt-3 flex flex-col sm:flex-row gap-2">
+          <input type="url" id="mw-url" placeholder="Cola o link do modelo, ex.: https://makerworld.com/pt/models/1400373" onkeydown="if(event.key==='Enter') mwImportFromInput()" class="flex-1 text-xs p-2.5 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-white dark:bg-notion-darkBg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+          <button id="mw-import-btn" onclick="mwImportFromInput()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition active:scale-95">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Importar
+          </button>
+        </div>
+        <div id="mw-status" class="text-[11px] mt-2 text-gray-500"></div>
+
+        <!-- Modo manual (quando o MakerWorld bloqueia o acesso automático) -->
+        <div id="mw-manual" class="hidden mt-3 p-3 rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/20 text-[11px] space-y-2">
+          <div class="font-semibold text-amber-800 dark:text-amber-300">Modo manual (funciona sempre, também no telemóvel)</div>
+          <ol class="list-decimal ml-4 space-y-0.5 text-gray-700 dark:text-gray-300">
+            <li><a id="mw-manual-link" href="#" target="_blank" rel="noopener noreferrer" class="text-indigo-600 font-semibold underline">Abre a página de dados do modelo</a> (abre num novo separador).</li>
+            <li>Seleciona tudo (<kbd>Ctrl</kbd>+<kbd>A</kbd>) e copia (<kbd>Ctrl</kbd>+<kbd>C</kbd>).</li>
+            <li>Cola aqui em baixo e carrega em <strong>Ler dados</strong>.</li>
+          </ol>
+          <textarea id="mw-paste" rows="3" placeholder='{"id": 1400373, "title": "...", "instances": [...]}' class="w-full font-mono p-2 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-white dark:bg-notion-darkBg"></textarea>
+          <button onclick="mwImportFromPaste()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold">Ler dados</button>
+        </div>
+
+        <div id="mw-result" class="hidden mt-4 pt-4 border-t border-indigo-100 dark:border-indigo-900/50"></div>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         <!-- Formulário de Parâmetros -->
@@ -371,9 +406,12 @@
             <i class="fa-solid fa-sliders text-indigo-500"></i> Parâmetros da Peça / Fatiamento
           </h3>
 
+          <!-- Mapeamento multi-filamento (preenchido pela importação MakerWorld) -->
+          <div id="calc-filament-lines" class="hidden"></div>
+
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <!-- Bobina / Material -->
-            <div>
+            <div id="calc-spool-wrapper">
               <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Filamento a Usar</label>
               <select id="calc-spool" onchange="runLiveCalculator()" class="w-full text-xs p-2.5 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg">
                 <!-- Populado via JS -->
@@ -382,8 +420,14 @@
 
             <!-- Peso da Peça -->
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Peso da Peça (g) <span class="text-gray-400 font-normal">[no Slicer]</span></label>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Peso por Unidade (g) <span class="text-gray-400 font-normal">[no Slicer]</span></label>
               <input type="number" id="calc-weight" value="120" min="1" step="1" oninput="runLiveCalculator()" class="w-full text-xs p-2.5 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg">
+            </div>
+
+            <!-- Quantidade -->
+            <div>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Quantidade (unidades)</label>
+              <input type="number" id="calc-qty" value="1" min="1" step="1" oninput="runLiveCalculator()" class="w-full text-xs p-2.5 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg">
             </div>
 
             <!-- Margem de Resíduo/Purga -->
@@ -394,7 +438,7 @@
 
             <!-- Tempo de Impressão -->
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Tempo de Impressão (Horas decimais, ex: 3.5)</label>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Tempo por Unidade (horas decimais, ex: 3.5)</label>
               <input type="number" id="calc-time" value="4.0" min="0.1" step="0.1" oninput="runLiveCalculator()" class="w-full text-xs p-2.5 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg">
             </div>
 
@@ -408,13 +452,13 @@
 
             <!-- Mão de Obra / Pós-processamento -->
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Pós-Processamento / Acabamento (Minutos)</label>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Pós-Processamento por Unidade (Minutos)</label>
               <input type="number" id="calc-prep" value="15" min="0" step="5" oninput="runLiveCalculator()" class="w-full text-xs p-2.5 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg">
             </div>
 
             <!-- Embalagem e Acessórios -->
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Embalagem, Caixas e Acessórios (€)</label>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Embalagem e Acessórios por Encomenda (€)</label>
               <input type="number" id="calc-packaging" value="1.20" min="0" step="0.1" oninput="runLiveCalculator()" class="w-full text-xs p-2.5 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg">
             </div>
 
@@ -422,6 +466,17 @@
             <div>
               <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Margem de Lucro Alvo (%)</label>
               <input type="number" id="calc-margin" value="60" min="10" max="95" oninput="runLiveCalculator()" class="w-full text-xs p-2.5 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg">
+            </div>
+
+            <!-- Arredondamento do Preço -->
+            <div>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Arredondar Preço Final</label>
+              <select id="calc-rounding" onchange="runLiveCalculator()" class="w-full text-xs p-2.5 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg">
+                <option value="0">Sem arredondamento</option>
+                <option value="0.1">Para cima, 0,10 €</option>
+                <option value="0.5">Para cima, 0,50 €</option>
+                <option value="1">Para cima, 1,00 €</option>
+              </select>
             </div>
           </div>
         </div>
@@ -464,6 +519,8 @@
             <div class="mt-6 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50">
               <div class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Preço Recomendado ao Cliente</div>
               <div class="text-3xl font-extrabold text-indigo-700 dark:text-indigo-300 mt-1" id="calc-res-suggested-price">0,00 €</div>
+              <div class="text-[11px] text-indigo-700/80 dark:text-indigo-300/70" id="calc-res-unit"></div>
+              <div class="text-[10px] text-gray-400" id="calc-res-raw"></div>
               <div class="text-xs text-indigo-800 dark:text-indigo-300/80 mt-1 flex justify-between">
                 <span>Lucro Líquido: <strong id="calc-res-profit">0,00 €</strong></span>
                 <span id="calc-res-markup">Markup: 2.5x</span>
@@ -471,9 +528,14 @@
             </div>
           </div>
 
-          <button onclick="createOrderFromCalculator()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition active:scale-95">
-            <i class="fa-solid fa-cart-plus"></i> Criar Encomenda com estes Valores
-          </button>
+          <div class="space-y-2">
+            <button onclick="copyQuote()" class="w-full py-2.5 bg-white dark:bg-notion-darkBg border border-indigo-200 dark:border-indigo-900 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition active:scale-95">
+              <i class="fa-regular fa-copy"></i> Copiar Orçamento para o Cliente
+            </button>
+            <button onclick="createOrderFromCalculator()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition active:scale-95">
+              <i class="fa-solid fa-cart-plus"></i> Criar Encomenda com estes Valores
+            </button>
+          </div>
         </div>
 
       </div>
@@ -551,6 +613,11 @@
           <div class="flex items-center justify-between">
             <span class="text-gray-400 flex items-center gap-2"><i class="fa-solid fa-tag text-gray-400 w-4"></i> Preço Venda (€):</span>
             <input type="number" id="orderSalePrice" step="0.5" placeholder="0.00" class="text-right font-bold text-indigo-600 dark:text-indigo-400 bg-transparent border-b border-transparent focus:border-indigo-500 focus:outline-none w-24">
+          </div>
+
+          <div class="flex items-center justify-between sm:col-span-2 gap-3">
+            <span class="text-gray-400 flex items-center gap-2 shrink-0"><i class="fa-solid fa-link text-gray-400 w-4"></i> Link do Modelo:</span>
+            <input type="url" id="orderSourceUrl" placeholder="https://makerworld.com/..." class="flex-1 min-w-0 text-right font-medium bg-transparent border-b border-transparent focus:border-indigo-500 focus:outline-none text-indigo-600 dark:text-indigo-400">
           </div>
 
         </div>
@@ -723,7 +790,7 @@
 
   <!-- ================= MODAL: DEFINIÇÕES & FIREBASE ================= -->
   <div id="settingsModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-white dark:bg-notion-darkCard w-full max-w-lg rounded-2xl border border-gray-200 dark:border-notion-darkBorder shadow-2xl p-6 space-y-5">
+    <div class="bg-white dark:bg-notion-darkCard w-full max-w-lg rounded-2xl border border-gray-200 dark:border-notion-darkBorder shadow-2xl p-6 space-y-5 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-gray-100 dark:border-notion-darkBorder pb-3">
         <h3 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <span>⚙️</span> Definições & Sincronização Nuvem
@@ -746,6 +813,42 @@
             Voltar a Modo Local
           </button>
         </div>
+      </div>
+
+      <!-- Parâmetros de Custo -->
+      <div class="pt-4 border-t border-gray-100 dark:border-notion-darkBorder space-y-3">
+        <h4 class="text-xs font-semibold text-gray-800 dark:text-gray-200">Parâmetros de Custo (valores por defeito da Calculadora)</h4>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+          <label class="space-y-1"><span class="block text-gray-500">Energia (€/kWh)</span><input type="number" id="set-energy" step="0.01" min="0" class="w-full p-2 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg"></label>
+          <label class="space-y-1"><span class="block text-gray-500">Mão de obra (€/h)</span><input type="number" id="set-labor" step="0.5" min="0" class="w-full p-2 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg"></label>
+          <label class="space-y-1"><span class="block text-gray-500">Margem alvo (%)</span><input type="number" id="set-margin" step="1" min="0" max="95" class="w-full p-2 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg"></label>
+          <label class="space-y-1"><span class="block text-gray-500">Purga / falhas (%)</span><input type="number" id="set-waste" step="1" min="0" max="50" class="w-full p-2 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg"></label>
+          <label class="space-y-1"><span class="block text-gray-500">Embalagem (€)</span><input type="number" id="set-packaging" step="0.1" min="0" class="w-full p-2 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg"></label>
+          <label class="space-y-1"><span class="block text-gray-500">Acabamento (min/un.)</span><input type="number" id="set-prep" step="5" min="0" class="w-full p-2 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg"></label>
+          <label class="space-y-1"><span class="block text-gray-500">Arredondamento</span>
+            <select id="set-rounding" class="w-full p-2 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg">
+              <option value="0">Nenhum</option><option value="0.1">0,10 €</option><option value="0.5">0,50 €</option><option value="1">1,00 €</option>
+            </select>
+          </label>
+          <label class="space-y-1"><span class="block text-gray-500">Validade orçamento (dias)</span><input type="number" id="set-validity" step="1" min="1" class="w-full p-2 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg"></label>
+        </div>
+      </div>
+
+      <!-- Importação MakerWorld -->
+      <div class="pt-4 border-t border-gray-100 dark:border-notion-darkBorder space-y-2 text-[11px]">
+        <h4 class="text-xs font-semibold text-gray-800 dark:text-gray-200">Importação MakerWorld</h4>
+        <label class="block space-y-1">
+          <span class="block text-gray-500">URL do Proxy (opcional — importação 1-clique no telemóvel; ver <code>cloudflare-worker/README.md</code>)</span>
+          <input type="url" id="set-mw-proxy" placeholder="https://imagina3d-mw.aminhaconta.workers.dev" class="w-full p-2 rounded-lg border border-gray-200 dark:border-notion-darkBorder bg-gray-50 dark:bg-notion-darkBg font-mono">
+        </label>
+        <div class="flex items-center gap-2 flex-wrap text-gray-500">
+          <span>No computador, arrasta este botão para a barra de favoritos e clica nele na página de um modelo:</span>
+          <a id="mw-bookmarklet" href="#" onclick="event.preventDefault(); showToast('Arrasta este botão para a barra de favoritos.');" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold cursor-move">→ Imagina3D</a>
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <button onclick="saveSettingsFromModal()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition">Guardar Definições</button>
       </div>
 
       <!-- Backup e Restauro -->
@@ -800,7 +903,7 @@
   <!-- ================= JAVASCRIPT & LÓGICA DE APLICAÇÃO ================= -->
   <script type="module">
     // Importações Oficiais Firebase SDK v11 (Modular)
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { initializeApp, getApps, deleteApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -941,18 +1044,25 @@
       }
     ];
 
+    // Parâmetros de custo por defeito (editáveis em ⚙️ Definições)
+    const DEFAULT_SETTINGS = Object.freeze({
+      energyPriceKwh: 0.22,
+      laborHourlyRate: 12.00,
+      defaultWastePercent: 5,
+      defaultPackagingCost: 1.20,
+      defaultPrepMin: 15,
+      targetMargin: 60,
+      priceRounding: 0.5,
+      quoteValidityDays: 15,
+      mwProxyUrl: ''
+    });
+
     // Estados da Aplicação
     window.appState = {
       orders: [],
       spools: [],
       printers: [],
-      settings: {
-        energyPriceKwh: 0.22,
-        laborHourlyRate: 12.00,
-        defaultWastePercent: 5,
-        defaultPackagingCost: 1.20,
-        targetMargin: 60
-      },
+      settings: { ...DEFAULT_SETTINGS },
       currentEditingOrderId: null,
       firebaseActive: false,
       sortables: []
@@ -960,6 +1070,8 @@
 
     let db = null;
     let auth = null;
+    let fbApp = null;
+    let unsubscribers = [];
 
     // ================= INICIALIZAÇÃO =================
     window.onload = async () => {
@@ -978,24 +1090,52 @@
       // 4. Renderizar Interface
       renderAll();
       initKanbanDragAndDrop();
+      applySettingsToCalculator();
+      mwRenderBookmarklet();
       runLiveCalculator();
+
+      // 5. Importação vinda do bookmarklet MakerWorld (#mw=...)
+      mwImportFromHash();
+      window.addEventListener('hashchange', () => mwImportFromHash());
+
+      // 6. Tecla Esc fecha qualquer janela aberta
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        ['orderModal', 'spoolModal', 'printerModal', 'settingsModal'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el && !el.classList.contains('hidden')) { el.classList.add('hidden'); el.classList.remove('flex'); }
+        });
+      });
     };
 
     // ================= GESTÃO DE DADOS (LOCAL / FIREBASE) =================
+    function safeParse(json, fallback) {
+      try {
+        const value = JSON.parse(json);
+        return value ?? fallback;
+      } catch (err) {
+        console.warn('Dados locais corrompidos, a usar valores por defeito.', err);
+        return fallback;
+      }
+    }
+
     function loadLocalData() {
       const orders = localStorage.getItem('imagina3d_orders');
       const spools = localStorage.getItem('imagina3d_spools');
       const printers = localStorage.getItem('imagina3d_printers');
+      const settings = localStorage.getItem('imagina3d_settings');
 
-      window.appState.orders = orders ? JSON.parse(orders) : DEMO_ORDERS;
-      window.appState.spools = spools ? JSON.parse(spools) : DEMO_SPOOLS;
-      window.appState.printers = printers ? JSON.parse(printers) : DEMO_PRINTERS;
+      window.appState.orders = orders ? safeParse(orders, DEMO_ORDERS) : DEMO_ORDERS;
+      window.appState.spools = spools ? safeParse(spools, DEMO_SPOOLS) : DEMO_SPOOLS;
+      window.appState.printers = printers ? safeParse(printers, DEMO_PRINTERS) : DEMO_PRINTERS;
+      window.appState.settings = { ...DEFAULT_SETTINGS, ...(settings ? safeParse(settings, {}) : {}) };
     }
 
     function saveLocalData() {
       localStorage.setItem('imagina3d_orders', JSON.stringify(window.appState.orders));
       localStorage.setItem('imagina3d_spools', JSON.stringify(window.appState.spools));
       localStorage.setItem('imagina3d_printers', JSON.stringify(window.appState.printers));
+      localStorage.setItem('imagina3d_settings', JSON.stringify(window.appState.settings));
     }
 
     async function initFirebaseIfAvailable() {
@@ -1011,7 +1151,9 @@
 
       try {
         const config = JSON.parse(cfgStr);
-        const fbApp = initializeApp(config);
+        await disconnectFirebase();
+        // Nome único: permite religar com outra configuração sem erro "duplicate app"
+        fbApp = initializeApp(config, `imagina3d-${Date.now()}`);
         auth = getAuth(fbApp);
         db = getFirestore(fbApp);
 
@@ -1030,73 +1172,100 @@
         console.warn("Aviso Firebase:", err);
         window.appState.firebaseActive = false;
         updateSyncStatusUI(false);
+        showToast(`⚠️ Não foi possível ligar ao Firebase (${err.code || err.message}).`);
       }
     }
 
+    async function disconnectFirebase() {
+      unsubscribers.forEach(unsub => unsub());
+      unsubscribers = [];
+      if (fbApp) {
+        try { await deleteApp(fbApp); } catch (err) { console.warn('Erro ao terminar app Firebase:', err); }
+      }
+      fbApp = null;
+      db = null;
+      auth = null;
+      window.appState.firebaseActive = false;
+    }
+
+    const cloudPath = (...segments) => ['artifacts', APP_ID, 'public', 'data', ...segments];
+
+    // Escuta uma coleção; se a nuvem estiver vazia na 1.ª leitura, envia os dados locais (seed)
+    function listenCollection(name, onData) {
+      const col = collection(db, ...cloudPath(name));
+      let firstSnapshot = true;
+      return onSnapshot(col, async (snapshot) => {
+        const isFirst = firstSnapshot;
+        firstSnapshot = false;
+        if (isFirst && snapshot.empty) {
+          const localItems = window.appState[name] || [];
+          await Promise.all(localItems.map(item => setDoc(doc(col, item.id), item)));
+          return;
+        }
+        onData(snapshot.docs.map(d => d.data()));
+      }, (err) => {
+        console.error(`Erro no realtime ${name}:`, err);
+        showToast(`⚠️ Erro de sincronização (${name}): ${err.code || 'desconhecido'}`);
+      });
+    }
+
     function setupRealtimeListeners() {
-      if (!db || !auth.currentUser) return;
+      if (!db || !auth?.currentUser) return;
 
-      // RULE 1: Coleções Públicas estritas
-      const ordersCol = collection(db, 'artifacts', APP_ID, 'public', 'data', 'orders');
-      const spoolsCol = collection(db, 'artifacts', APP_ID, 'public', 'data', 'spools');
-      const printersCol = collection(db, 'artifacts', APP_ID, 'public', 'data', 'printers');
-
-      // Encomendas em Tempo Real (Com callback de erro obrigatório)
-      onSnapshot(ordersCol, (snapshot) => {
-        if (!snapshot.empty) {
-          const remoteOrders = [];
-          snapshot.forEach(docSnap => remoteOrders.push(docSnap.data()));
-          window.appState.orders = remoteOrders;
+      unsubscribers = [
+        listenCollection('orders', (items) => {
+          window.appState.orders = [...items].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
           saveLocalData();
           renderKanban();
           updateKPIs();
-        }
-      }, (err) => console.error("Erro no realtime orders:", err));
-
-      // Bobinas
-      onSnapshot(spoolsCol, (snapshot) => {
-        if (!snapshot.empty) {
-          const remoteSpools = [];
-          snapshot.forEach(docSnap => remoteSpools.push(docSnap.data()));
-          window.appState.spools = remoteSpools;
+        }),
+        listenCollection('spools', (items) => {
+          window.appState.spools = items;
           saveLocalData();
           renderSpools();
+          populateDropdowns();
           updateKPIs();
-        }
-      }, (err) => console.error("Erro no realtime spools:", err));
-
-      // Impressoras
-      onSnapshot(printersCol, (snapshot) => {
-        if (!snapshot.empty) {
-          const remotePrinters = [];
-          snapshot.forEach(docSnap => remotePrinters.push(docSnap.data()));
-          window.appState.printers = remotePrinters;
+        }),
+        listenCollection('printers', (items) => {
+          window.appState.printers = items;
           saveLocalData();
           renderPrinters();
+          populateDropdowns();
           updateKPIs();
-        }
-      }, (err) => console.error("Erro no realtime printers:", err));
+        }),
+        onSnapshot(doc(db, ...cloudPath('settings', 'global')), async (snap) => {
+          if (!snap.exists()) {
+            await setDoc(snap.ref, window.appState.settings);
+            return;
+          }
+          window.appState.settings = { ...DEFAULT_SETTINGS, ...snap.data() };
+          saveLocalData();
+          runLiveCalculator();
+        }, (err) => console.error('Erro no realtime settings:', err))
+      ];
     }
 
     async function syncDocumentToCloud(colName, id, data) {
       saveLocalData();
-      if (!window.appState.firebaseActive || !db || !auth.currentUser) return;
+      if (!window.appState.firebaseActive || !db || !auth?.currentUser) return;
       try {
-        const docRef = doc(db, 'artifacts', APP_ID, 'public', 'data', colName, id);
+        const docRef = doc(db, ...cloudPath(colName, id));
         await setDoc(docRef, data);
       } catch (err) {
         console.error("Erro ao sincronizar documento:", err);
+        showToast("⚠️ Guardado localmente, mas falhou a sincronização com a nuvem.");
       }
     }
 
     async function deleteDocumentFromCloud(colName, id) {
       saveLocalData();
-      if (!window.appState.firebaseActive || !db || !auth.currentUser) return;
+      if (!window.appState.firebaseActive || !db || !auth?.currentUser) return;
       try {
-        const docRef = doc(db, 'artifacts', APP_ID, 'public', 'data', colName, id);
+        const docRef = doc(db, ...cloudPath(colName, id));
         await deleteDoc(docRef);
       } catch (err) {
         console.error("Erro ao apagar da nuvem:", err);
+        showToast("⚠️ Apagado localmente, mas falhou na nuvem.");
       }
     }
 
@@ -1137,30 +1306,34 @@
       const counts = { fatiar: 0, fila: 0, imprimindo: 0, pos: 0, concluido: 0 };
 
       const filteredOrders = window.appState.orders.filter(ord => {
-        return ord.title.toLowerCase().includes(search) || ord.client.toLowerCase().includes(search);
+        return String(ord.title || '').toLowerCase().includes(search) || String(ord.client || '').toLowerCase().includes(search);
       });
 
       filteredOrders.forEach(ord => {
         counts[ord.status] = (counts[ord.status] || 0) + 1;
         const spool = window.appState.spools.find(s => s.id === ord.spoolId);
         const printer = window.appState.printers.find(p => p.id === ord.printerId);
+        const sourceUrl = safeUrl(ord.sourceUrl);
 
         const card = document.createElement('div');
         card.className = "bg-white dark:bg-notion-darkCard p-3.5 rounded-xl border border-gray-200 dark:border-notion-darkBorder shadow-sm hover:shadow-md transition cursor-pointer select-none group";
         card.dataset.id = ord.id;
         card.onclick = (e) => {
-          // Não abrir modal se clicou no botão de ação rápida
-          if (e.target.closest('.quick-action-btn')) return;
+          // Não abrir modal se clicou no botão de ação rápida ou num link
+          if (e.target.closest('.quick-action-btn, a')) return;
           openOrderModal(ord.id);
         };
 
         card.innerHTML = `
           <div class="flex items-start justify-between gap-2 mb-2">
-            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-100 dark:bg-notion-darkBorder text-gray-500 font-semibold">${ord.id}</span>
-            <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400">${parseFloat(ord.salePrice || 0).toFixed(2)} €</span>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-100 dark:bg-notion-darkBorder text-gray-500 font-semibold">${escapeHtml(ord.id)}</span>
+            <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400">${formatEur(ord.salePrice)}</span>
           </div>
 
-          <h4 class="text-xs font-semibold text-gray-900 dark:text-white leading-snug mb-2 group-hover:text-indigo-600 transition-colors">${escapeHtml(ord.title)}</h4>
+          <h4 class="text-xs font-semibold text-gray-900 dark:text-white leading-snug mb-2 group-hover:text-indigo-600 transition-colors">
+            ${escapeHtml(ord.title)}
+            ${sourceUrl ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-indigo-600 ml-1" title="Abrir modelo"><i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i></a>` : ''}
+          </h4>
 
           <!-- Tags e Metadados Estilo Notion -->
           <div class="space-y-1.5 text-[11px] text-gray-500 dark:text-gray-400">
@@ -1172,27 +1345,27 @@
             <div class="flex items-center gap-2 flex-wrap pt-1">
               ${spool ? `
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-notion-darkBorder text-[10px] font-medium">
-                  <span class="w-2 h-2 rounded-full border border-black/10" style="background-color: ${spool.colorHex}"></span>
-                  ${spool.material}
+                  <span class="w-2 h-2 rounded-full border border-black/10" style="background-color: ${safeColor(spool.colorHex)}"></span>
+                  ${escapeHtml(spool.material)}
                 </span>
               ` : ''}
               ${printer ? `
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-notion-darkBorder text-[10px] font-medium">
                   <i class="fa-solid fa-print text-[9px]"></i>
-                  ${printer.model}
+                  ${escapeHtml(printer.model)}
                 </span>
               ` : ''}
             </div>
 
             <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-notion-darkBorder text-[10px]">
               <span class="flex items-center gap-1">
-                <i class="fa-regular fa-clock text-gray-400"></i> ${ord.printTimeH}h
+                <i class="fa-regular fa-clock text-gray-400"></i> ${MakerWorld.formatDuration((parseFloat(ord.printTimeH) || 0) * 3600)}
               </span>
               <span class="flex items-center gap-1">
-                <i class="fa-solid fa-weight-hanging text-gray-400"></i> ${ord.weightG}g
+                <i class="fa-solid fa-weight-hanging text-gray-400"></i> ${Math.round(parseFloat(ord.weightG) || 0)}g
               </span>
               ${ord.dueDate ? `
-                <span class="text-gray-400"><i class="fa-regular fa-calendar"></i> ${ord.dueDate.slice(5)}</span>
+                <span class="${isOverdue(ord) ? 'text-red-500 font-semibold' : 'text-gray-400'}"><i class="fa-regular fa-calendar"></i> ${escapeHtml(String(ord.dueDate).slice(5))}</span>
               ` : ''}
             </div>
           </div>
@@ -1229,10 +1402,10 @@
           <div>
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-2.5">
-                <div class="w-6 h-6 rounded-full border border-black/10 shadow-inner shrink-0" style="background-color: ${sp.colorHex}"></div>
+                <div class="w-6 h-6 rounded-full border border-black/10 shadow-inner shrink-0" style="background-color: ${safeColor(sp.colorHex)}"></div>
                 <div>
                   <h4 class="text-xs font-bold text-gray-900 dark:text-white leading-tight">${escapeHtml(sp.name)}</h4>
-                  <div class="text-[11px] text-gray-400">${escapeHtml(sp.brand)} &bull; ${sp.material}</div>
+                  <div class="text-[11px] text-gray-400">${escapeHtml(sp.brand)} &bull; ${escapeHtml(sp.material)}</div>
                 </div>
               </div>
               <span class="text-[10px] font-mono px-2 py-0.5 rounded ${isLow ? 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400 font-bold animate-pulse' : 'bg-gray-100 dark:bg-notion-darkBorder text-gray-600 dark:text-gray-400'}">
@@ -1261,9 +1434,10 @@
           <div class="mt-4 pt-2 flex items-center justify-between gap-2 border-t border-gray-100 dark:border-notion-darkBorder">
             <span class="text-[10px] text-gray-400 uppercase font-semibold">Ajuste Rápido:</span>
             <div class="flex items-center gap-1">
-              <button onclick="adjustSpoolWeight('${sp.id}', -50)" class="px-2 py-0.5 text-[11px] bg-gray-100 dark:bg-notion-darkBorder hover:bg-gray-200 rounded font-medium">-50g</button>
-              <button onclick="adjustSpoolWeight('${sp.id}', 50)" class="px-2 py-0.5 text-[11px] bg-gray-100 dark:bg-notion-darkBorder hover:bg-gray-200 rounded font-medium">+50g</button>
-              <button onclick="deleteSpool('${sp.id}')" class="text-gray-400 hover:text-red-500 text-xs ml-1" title="Eliminar"><i class="fa-regular fa-trash-can"></i></button>
+              <button data-action="spool-adjust" data-id="${escapeHtml(sp.id)}" data-delta="-50" class="px-2 py-0.5 text-[11px] bg-gray-100 dark:bg-notion-darkBorder hover:bg-gray-200 rounded font-medium">-50g</button>
+              <button data-action="spool-adjust" data-id="${escapeHtml(sp.id)}" data-delta="50" class="px-2 py-0.5 text-[11px] bg-gray-100 dark:bg-notion-darkBorder hover:bg-gray-200 rounded font-medium">+50g</button>
+              <button data-action="spool-edit" data-id="${escapeHtml(sp.id)}" class="text-gray-400 hover:text-indigo-500 text-xs ml-1" title="Editar"><i class="fa-regular fa-pen-to-square"></i></button>
+              <button data-action="spool-delete" data-id="${escapeHtml(sp.id)}" class="text-gray-400 hover:text-red-500 text-xs ml-1" title="Eliminar"><i class="fa-regular fa-trash-can"></i></button>
             </div>
           </div>
         `;
@@ -1288,7 +1462,7 @@
             <div class="flex items-start justify-between">
               <div>
                 <h4 class="text-sm font-bold text-gray-900 dark:text-white">${escapeHtml(pr.name)}</h4>
-                <div class="text-xs text-gray-400">${escapeHtml(pr.model)} &bull; ${pr.nozzle}</div>
+                <div class="text-xs text-gray-400">${escapeHtml(pr.model)} &bull; ${escapeHtml(pr.nozzle)}</div>
               </div>
               <span class="text-xs px-2.5 py-1 rounded-full font-medium ${
                 pr.status === 'livre' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' :
@@ -1303,7 +1477,7 @@
             <div class="mt-4 p-3 rounded-lg bg-gray-50 dark:bg-notion-darkBg border border-gray-100 dark:border-notion-darkBorder text-xs">
               <span class="text-gray-400 block text-[10px] uppercase font-semibold">Trabalho Atual:</span>
               <div class="font-medium text-gray-800 dark:text-gray-200 truncate mt-0.5">
-                ${currentOrder ? `#${currentOrder.id} - ${escapeHtml(currentOrder.title)}` : '<span class="text-gray-400 italic">Sem impressões ativas</span>'}
+                ${currentOrder ? `#${escapeHtml(currentOrder.id)} - ${escapeHtml(currentOrder.title)}` : '<span class="text-gray-400 italic">Sem impressões ativas</span>'}
               </div>
             </div>
 
@@ -1321,7 +1495,7 @@
             ${needsMaint ? `
               <div class="mt-3 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 text-amber-800 dark:text-amber-300 text-[11px] flex items-center justify-between">
                 <span><i class="fa-solid fa-wrench mr-1"></i> Lubrificação / Revisão sugerida!</span>
-                <button onclick="logPrinterMaintenance('${pr.id}')" class="px-2 py-0.5 bg-amber-600 text-white rounded text-[10px] font-bold">Feito</button>
+                <button data-action="printer-maint" data-id="${escapeHtml(pr.id)}" class="px-2 py-0.5 bg-amber-600 text-white rounded text-[10px] font-bold">Feito</button>
               </div>
             ` : ''}
           </div>
@@ -1330,9 +1504,9 @@
           <div class="mt-5 pt-3 border-t border-gray-100 dark:border-notion-darkBorder flex items-center justify-between">
             <span class="text-[10px] text-gray-400 uppercase font-semibold">Alterar Estado:</span>
             <div class="flex items-center gap-1.5">
-              <button onclick="setPrinterStatus('${pr.id}', 'livre')" class="px-2 py-1 text-xs rounded border border-gray-200 dark:border-notion-darkBorder hover:bg-gray-100 dark:hover:bg-notion-darkHover">Livre</button>
-              <button onclick="setPrinterStatus('${pr.id}', 'manutencao')" class="px-2 py-1 text-xs rounded border border-gray-200 dark:border-notion-darkBorder hover:bg-gray-100 dark:hover:bg-notion-darkHover">Manutenção</button>
-              <button onclick="deletePrinter('${pr.id}')" class="text-gray-400 hover:text-red-500 text-xs ml-1"><i class="fa-regular fa-trash-can"></i></button>
+              <button data-action="printer-status" data-id="${escapeHtml(pr.id)}" data-status="livre" class="px-2 py-1 text-xs rounded border border-gray-200 dark:border-notion-darkBorder hover:bg-gray-100 dark:hover:bg-notion-darkHover">Livre</button>
+              <button data-action="printer-status" data-id="${escapeHtml(pr.id)}" data-status="manutencao" class="px-2 py-1 text-xs rounded border border-gray-200 dark:border-notion-darkBorder hover:bg-gray-100 dark:hover:bg-notion-darkHover">Manutenção</button>
+              <button data-action="printer-delete" data-id="${escapeHtml(pr.id)}" class="text-gray-400 hover:text-red-500 text-xs ml-1" title="Eliminar"><i class="fa-regular fa-trash-can"></i></button>
             </div>
           </div>
         `;
@@ -1342,48 +1516,46 @@
 
     // Atualizar KPIs e Dashboard
     window.updateKPIs = function() {
-      let revenue = 0;
-      let totalCost = 0;
-      let totalWeight = 0;
-      let totalHours = 0;
-      let printingCount = 0;
+      const { orders, spools, printers, settings } = window.appState;
+      const active = orders.filter(o => o.status !== 'concluido');
+      const done = orders.filter(o => o.status === 'concluido');
+      const sum = (list, fn) => list.reduce((acc, o) => acc + fn(o), 0);
 
-      window.appState.orders.forEach(ord => {
-        revenue += parseFloat(ord.salePrice || 0);
-        totalWeight += parseFloat(ord.weightG || 0);
-        totalHours += parseFloat(ord.printTimeH || 0);
-        if (ord.status === 'imprimindo') printingCount++;
+      const revenue = sum(active, o => parseFloat(o.salePrice) || 0);
+      const totalCost = sum(active, o => Pricing.estimateOrderCost(o, spools, printers, settings));
+      const totalWeight = sum(active, o => parseFloat(o.weightG) || 0);
+      const totalHours = sum(active, o => parseFloat(o.printTimeH) || 0);
+      const printingCount = active.filter(o => o.status === 'imprimindo').length;
+      const doneRevenue = sum(done, o => parseFloat(o.salePrice) || 0);
+      const overdue = active.filter(isOverdue).length;
 
-        // Calcular custo aproximado desta peça
-        const spool = window.appState.spools.find(s => s.id === ord.spoolId);
-        const costG = spool ? (spool.price / spool.initialWeight) : 0.02;
-        const matCost = ord.weightG * costG * 1.05;
-        const machineCost = ord.printTimeH * 0.70;
-        totalCost += (matCost + machineCost + 1.20);
-      });
-
-      const netProfit = Math.max(0, revenue - totalCost);
+      const netProfit = revenue - totalCost;
       const marginPct = revenue > 0 ? Math.round((netProfit / revenue) * 100) : 0;
 
-      document.getElementById('kpi-revenue').innerText = `${revenue.toFixed(2)} €`;
-      document.getElementById('kpi-profit').innerText = `${netProfit.toFixed(2)} €`;
-      document.getElementById('kpi-margin-pct').innerText = `Margem média global: ${marginPct}%`;
-      document.getElementById('kpi-active-orders').innerText = window.appState.orders.length;
-      document.getElementById('kpi-printing-count').innerText = `${printingCount} em máquina ativa`;
+      document.getElementById('kpi-revenue').innerText = formatEur(revenue);
+      document.getElementById('kpi-profit').innerText = formatEur(netProfit);
+      document.getElementById('kpi-margin-pct').innerText = `Margem média: ${marginPct}% · Concluído: ${formatEur(doneRevenue)}`;
+      document.getElementById('kpi-active-orders').innerText = active.length;
+      document.getElementById('kpi-printing-count').innerText = `${printingCount} a imprimir${overdue ? ` · ⚠️ ${overdue} em atraso` : ''}`;
       document.getElementById('kpi-weight').innerText = `${(totalWeight / 1000).toFixed(2)} kg`;
-      document.getElementById('kpi-hours').innerText = `${totalHours.toFixed(1)} h estimadas`;
+      document.getElementById('kpi-hours').innerText = `${totalHours.toFixed(1)} h de impressão pendentes`;
 
       // Atualizar lista rápida de máquinas no Dashboard
+      const statusStyle = {
+        livre: ['Disponível', 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'],
+        imprimindo: ['A imprimir', 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300'],
+        manutencao: ['Manutenção', 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300']
+      };
       const dashPrinters = document.getElementById('dashboardPrintersList');
       if (dashPrinters) {
-        dashPrinters.innerHTML = window.appState.printers.map(p => `
+        dashPrinters.innerHTML = printers.map(p => {
+          const [label, cls] = statusStyle[p.status] || statusStyle.manutencao;
+          return `
           <div class="flex items-center justify-between p-2.5 rounded-lg border border-gray-100 dark:border-notion-darkBorder text-xs">
             <span class="font-medium">${escapeHtml(p.name)}</span>
-            <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${p.status === 'livre' ? 'bg-emerald-100 text-emerald-800' : p.status === 'imprimindo' ? 'bg-indigo-100 text-indigo-800' : 'bg-amber-100 text-amber-800'}">
-              ${p.status.toUpperCase()}
-            </span>
-          </div>
-        `).join('');
+            <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${cls}">${label}</span>
+          </div>`;
+        }).join('');
       }
 
       // Alertas de Bobinas no Dashboard
@@ -1396,7 +1568,7 @@
           dashSpools.innerHTML = lowSpools.map(s => `
             <div class="flex items-center justify-between p-2 rounded-lg bg-red-50 dark:bg-red-950/40 text-xs">
               <span class="font-medium">${escapeHtml(s.name)}</span>
-              <strong class="text-red-600 dark:text-red-400">${s.remainingWeight} g restantes</strong>
+              <strong class="text-red-600 dark:text-red-400">${Math.round(s.remainingWeight)} g restantes</strong>
             </div>
           `).join('');
         }
@@ -1410,17 +1582,25 @@
       const orderPrinter = document.getElementById('orderPrinter');
 
       const spoolOpts = window.appState.spools.map(s => 
-        `<option value="${s.id}">${s.name} (${s.material}) - ${(s.price/s.initialWeight).toFixed(3)}€/g</option>`
+        `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)} (${escapeHtml(s.material)}) - ${(s.price/s.initialWeight).toFixed(3)}€/g</option>`
       ).join('');
 
       const printerOpts = window.appState.printers.map(p => 
-        `<option value="${p.id}">${p.name} - ${parseFloat(p.hourlyRate).toFixed(2)}€/h</option>`
+        `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)} - ${parseFloat(p.hourlyRate).toFixed(2)}€/h</option>`
       ).join('');
 
-      if (spoolSelect) spoolSelect.innerHTML = spoolOpts;
-      if (printerSelect) printerSelect.innerHTML = printerOpts;
-      if (orderSpool) orderSpool.innerHTML = spoolOpts;
-      if (orderPrinter) orderPrinter.innerHTML = printerOpts;
+      // Repõe as opções preservando a seleção atual (se ainda existir)
+      const refill = (select, html) => {
+        if (!select) return;
+        const previous = select.value;
+        select.innerHTML = html;
+        if ([...select.options].some(o => o.value === previous)) select.value = previous;
+      };
+      refill(spoolSelect, spoolOpts);
+      refill(printerSelect, printerOpts);
+      refill(orderSpool, spoolOpts);
+      refill(orderPrinter, printerOpts);
+      mwRenderFilamentLines();
     }
 
     // ================= DRAG & DROP DO KANBAN =================
@@ -1446,18 +1626,23 @@
 
             const order = window.appState.orders.find(o => o.id === orderId);
             if (order && order.status !== newStatus) {
-              const oldStatus = order.status;
-              order.status = newStatus;
-
               // Se moveu para Concluído e ainda não descontou bobina
               if (newStatus === 'concluido' && !order.deducted) {
                 promptConcludeDeduction(order);
-              } else {
-                await syncDocumentToCloud('orders', order.id, order);
-                renderKanban();
-                updateKPIs();
-                showToast(`Estado atualizado para '${newStatus}'`);
+                return;
               }
+
+              const updated = { ...order, status: newStatus, updatedAt: Date.now() };
+              window.appState.orders = window.appState.orders.map(o => o.id === orderId ? updated : o);
+              await syncDocumentToCloud('orders', updated.id, updated);
+
+              // Impressora acompanha o estado da encomenda
+              if (newStatus === 'imprimindo') {
+                await updatePrinter(updated.printerId, { status: 'imprimindo' });
+              }
+
+              renderAll();
+              showToast(`Estado atualizado para '${STATUS_LABELS[newStatus] || newStatus}'`);
             }
           }
         });
@@ -1465,67 +1650,40 @@
       });
     }
 
-    // ================= CALCULADORA PARAMÉTRICA =================
-    window.runLiveCalculator = function() {
-      const spoolId = document.getElementById('calc-spool')?.value;
-      const printerId = document.getElementById('calc-printer')?.value;
-      const weightG = parseFloat(document.getElementById('calc-weight')?.value || 0);
-      const wastePct = parseFloat(document.getElementById('calc-waste')?.value || 0) / 100;
-      const timeH = parseFloat(document.getElementById('calc-time')?.value || 0);
-      const prepMin = parseFloat(document.getElementById('calc-prep')?.value || 0);
-      const packCost = parseFloat(document.getElementById('calc-packaging')?.value || 0);
-      const marginPct = parseFloat(document.getElementById('calc-margin')?.value || 60) / 100;
+    const STATUS_LABELS = Object.freeze({
+      fatiar: 'Fatiar / Orçamentar',
+      fila: 'Em Fila',
+      imprimindo: 'A Imprimir',
+      pos: 'Pós-Processamento',
+      concluido: 'Concluído'
+    });
 
-      const spool = window.appState.spools.find(s => s.id === spoolId) || window.appState.spools[0];
-      const printer = window.appState.printers.find(p => p.id === printerId) || window.appState.printers[0];
+    const eurFmt = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
+    const formatEur = (v) => eurFmt.format(Number.isFinite(parseFloat(v)) ? parseFloat(v) : 0);
+    const safeUrl = (u) => (typeof u === 'string' && /^https?:\/\/[^\s"'<>]+$/i.test(u.trim()) ? u.trim() : '');
+    const safeColor = (c) => (typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c.trim()) ? c.trim() : '#4f46e5');
+    const isOverdue = (ord) => Boolean(ord && ord.dueDate && ord.status !== 'concluido' && String(ord.dueDate) < new Date().toISOString().slice(0, 10));
 
-      // 1. Custo de Material
-      const costPerG = spool ? (spool.price / spool.initialWeight) : 0.02;
-      const totalMatWeight = weightG * (1 + wastePct);
-      const materialCost = totalMatWeight * costPerG;
+    async function updatePrinter(id, patch) {
+      const pr = window.appState.printers.find(p => p.id === id);
+      if (!pr) return;
+      const updated = { ...pr, ...patch };
+      window.appState.printers = window.appState.printers.map(p => p.id === id ? updated : p);
+      await syncDocumentToCloud('printers', id, updated);
+    }
 
-      // 2. Custo de Energia
-      const energyPrice = window.appState.settings.energyPriceKwh;
-      const powerKw = printer ? printer.powerKw : 0.15;
-      const energyCost = timeH * powerKw * energyPrice;
-
-      // 3. Custo de Máquina (Depreciação)
-      const machineRate = printer ? printer.hourlyRate : 0.60;
-      const machineCost = timeH * machineRate;
-
-      // 4. Mão de Obra
-      const laborRate = window.appState.settings.laborHourlyRate;
-      const laborCost = (prepMin / 60) * laborRate;
-
-      // 5. Total
-      const totalCost = materialCost + energyCost + machineCost + laborCost + packCost;
-      const suggestedPrice = marginPct < 1 ? (totalCost / (1 - marginPct)) : totalCost * 2;
-      const netProfit = suggestedPrice - totalCost;
-
-      // Atualizar UI
-      document.getElementById('calc-res-material-g').innerText = `${totalMatWeight.toFixed(0)}g`;
-      document.getElementById('calc-res-material-cost').innerText = `${materialCost.toFixed(2)} €`;
-      document.getElementById('calc-res-energy-cost').innerText = `${energyCost.toFixed(2)} €`;
-      document.getElementById('calc-res-machine-cost').innerText = `${machineCost.toFixed(2)} €`;
-      document.getElementById('calc-res-labor-cost').innerText = `${laborCost.toFixed(2)} €`;
-      document.getElementById('calc-res-pack-cost').innerText = `${packCost.toFixed(2)} €`;
-      document.getElementById('calc-res-total-cost').innerText = `${totalCost.toFixed(2)} €`;
-      document.getElementById('calc-res-suggested-price').innerText = `${suggestedPrice.toFixed(2)} €`;
-      document.getElementById('calc-res-profit').innerText = `${netProfit.toFixed(2)} €`;
-      document.getElementById('calc-res-markup').innerText = `Markup: ${(suggestedPrice / (totalCost || 1)).toFixed(1)}x`;
-
-      return { totalCost, suggestedPrice, netProfit, weightG, timeH, spoolId, printerId };
-    };
-
-    window.createOrderFromCalculator = function() {
-      const calcData = runLiveCalculator();
-      openNewOrderModal();
-      document.getElementById('orderWeight').value = calcData.weightG;
-      document.getElementById('orderPrintTime').value = calcData.timeH;
-      document.getElementById('orderSalePrice').value = calcData.suggestedPrice.toFixed(2);
-      if (calcData.spoolId) document.getElementById('orderSpool').value = calcData.spoolId;
-      if (calcData.printerId) document.getElementById('orderPrinter').value = calcData.printerId;
-    };
+    // Delegação de eventos para cartões de bobinas e impressoras
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const { action, id, delta, status } = btn.dataset;
+      if (action === 'spool-adjust') adjustSpoolWeight(id, parseFloat(delta || 0));
+      else if (action === 'spool-edit') openEditSpoolModal(id);
+      else if (action === 'spool-delete') deleteSpool(id);
+      else if (action === 'printer-maint') logPrinterMaintenance(id);
+      else if (action === 'printer-status') setPrinterStatus(id, status);
+      else if (action === 'printer-delete') deletePrinter(id);
+    });
 
     // ================= MODAL DE ENCOMENDA (NOTION PAGE) =================
     window.openNewOrderModal = function() {
@@ -1537,6 +1695,7 @@
       document.getElementById('orderStatus').value = 'fatiar';
       document.getElementById('orderDueDate').value = new Date(Date.now() + 86400000 * 3).toISOString().slice(0, 10);
       document.getElementById('orderSalePrice').value = '19.50';
+      document.getElementById('orderSourceUrl').value = '';
       document.getElementById('orderWeight').value = '110';
       document.getElementById('orderPrintTime').value = '3.5';
       document.getElementById('orderNozzle').value = '0.4 mm';
@@ -1562,6 +1721,7 @@
       document.getElementById('orderSpool').value = ord.spoolId || '';
       document.getElementById('orderDueDate').value = ord.dueDate || '';
       document.getElementById('orderSalePrice').value = ord.salePrice || 0;
+      document.getElementById('orderSourceUrl').value = ord.sourceUrl || '';
       document.getElementById('orderWeight').value = ord.weightG || 100;
       document.getElementById('orderPrintTime').value = ord.printTimeH || 1;
       document.getElementById('orderNozzle').value = ord.nozzle || '0.4 mm';
@@ -1596,36 +1756,46 @@
       }
 
       const id = window.appState.currentEditingOrderId || `ORD-${Date.now().toString().slice(-4)}`;
+      const existing = window.appState.orders.find(o => o.id === id);
       const orderData = {
-        id: id,
-        title: title,
-        client: client,
+        id,
+        title,
+        client,
         status: document.getElementById('orderStatus').value,
         printerId: document.getElementById('orderPrinter').value,
         spoolId: document.getElementById('orderSpool').value,
         dueDate: document.getElementById('orderDueDate').value,
-        salePrice: parseFloat(document.getElementById('orderSalePrice').value || 0),
-        weightG: parseFloat(document.getElementById('orderWeight').value || 0),
-        printTimeH: parseFloat(document.getElementById('orderPrintTime').value || 0),
+        salePrice: Math.max(0, parseFloat(document.getElementById('orderSalePrice').value || 0)),
+        sourceUrl: safeUrl(document.getElementById('orderSourceUrl').value),
+        weightG: Math.max(0, parseFloat(document.getElementById('orderWeight').value || 0)),
+        printTimeH: Math.max(0, parseFloat(document.getElementById('orderPrintTime').value || 0)),
         nozzle: document.getElementById('orderNozzle').value,
         infill: document.getElementById('orderInfill').value,
         notes: document.getElementById('orderNotes').value,
-        deducted: false
+        deducted: existing ? Boolean(existing.deducted) : false,
+        createdAt: existing?.createdAt || Date.now(),
+        updatedAt: Date.now()
       };
 
-      const existingIndex = window.appState.orders.findIndex(o => o.id === id);
-      if (existingIndex >= 0) {
-        orderData.deducted = window.appState.orders[existingIndex].deducted || false;
-        window.appState.orders[existingIndex] = orderData;
+      if (existing) {
+        window.appState.orders = window.appState.orders.map(o => o.id === id ? orderData : o);
       } else {
-        window.appState.orders.unshift(orderData);
+        window.appState.orders = [orderData, ...window.appState.orders];
+      }
+
+      if (orderData.status === 'imprimindo') {
+        await updatePrinter(orderData.printerId, { status: 'imprimindo' });
       }
 
       await syncDocumentToCloud('orders', id, orderData);
       closeOrderModal();
-      renderKanban();
-      updateKPIs();
-      showToast("Encomenda gravada com sucesso!");
+      renderAll();
+
+      if (orderData.status === 'concluido' && !orderData.deducted) {
+        promptConcludeDeduction(orderData);
+      } else {
+        showToast("Encomenda gravada com sucesso!");
+      }
     };
 
     window.deleteCurrentOrder = async function() {
@@ -1667,74 +1837,117 @@
 
       if (!pendingConcludeOrder) return;
       const ord = pendingConcludeOrder;
+      let deducted = Boolean(ord.deducted);
 
-      ord.status = 'concluido';
-
-      if (shouldDeduct && !ord.deducted) {
-        // Descontar bobina
+      if (shouldDeduct && !deducted) {
         const spool = window.appState.spools.find(s => s.id === ord.spoolId);
         if (spool) {
-          spool.remainingWeight = Math.max(0, spool.remainingWeight - ord.weightG);
-          await syncDocumentToCloud('spools', spool.id, spool);
+          const updatedSpool = { ...spool, remainingWeight: Math.max(0, spool.remainingWeight - ord.weightG) };
+          window.appState.spools = window.appState.spools.map(s => s.id === spool.id ? updatedSpool : s);
+          await syncDocumentToCloud('spools', spool.id, updatedSpool);
         }
 
-        // Somar horas à impressora
         const printer = window.appState.printers.find(p => p.id === ord.printerId);
         if (printer) {
-          printer.totalHours = (printer.totalHours || 0) + ord.printTimeH;
-          printer.status = 'livre';
-          await syncDocumentToCloud('printers', printer.id, printer);
+          await updatePrinter(printer.id, {
+            totalHours: Math.round(((printer.totalHours || 0) + ord.printTimeH) * 10) / 10,
+            status: 'livre'
+          });
         }
 
-        ord.deducted = true;
+        deducted = true;
         showToast(`✅ Concluído! ${ord.weightG}g descontados.`);
       } else {
         showToast(`Movido para concluído.`);
       }
 
-      await syncDocumentToCloud('orders', ord.id, ord);
+      const updatedOrder = { ...ord, status: 'concluido', deducted, updatedAt: Date.now() };
+      window.appState.orders = window.appState.orders.map(o => o.id === ord.id ? updatedOrder : o);
+      await syncDocumentToCloud('orders', ord.id, updatedOrder);
       pendingConcludeOrder = null;
       renderAll();
     };
 
     // ================= AÇÕES DE BOBINAS =================
+    let currentEditingSpoolId = null;
+
     window.openNewSpoolModal = function() {
+      currentEditingSpoolId = null;
+      document.getElementById('spoolName').value = '';
+      document.getElementById('spoolBrand').value = '';
+      document.getElementById('spoolMaterial').value = 'PLA';
+      document.getElementById('spoolColorPicker').value = '#4f46e5';
+      document.getElementById('spoolColorHex').value = '#4f46e5';
+      document.getElementById('spoolPrice').value = '19.99';
+      document.getElementById('spoolInitWeight').value = '1000';
+      document.getElementById('spoolCurrentWeight').value = '1000';
       document.getElementById('spoolModal').classList.remove('hidden');
       document.getElementById('spoolModal').classList.add('flex');
     };
+
+    window.openEditSpoolModal = function(id) {
+      const sp = window.appState.spools.find(s => s.id === id);
+      if (!sp) return;
+      currentEditingSpoolId = id;
+      document.getElementById('spoolName').value = sp.name || '';
+      document.getElementById('spoolBrand').value = sp.brand || '';
+      document.getElementById('spoolMaterial').value = sp.material || 'PLA';
+      document.getElementById('spoolColorPicker').value = safeColor(sp.colorHex);
+      document.getElementById('spoolColorHex').value = safeColor(sp.colorHex);
+      document.getElementById('spoolPrice').value = sp.price ?? 20;
+      document.getElementById('spoolInitWeight').value = sp.initialWeight ?? 1000;
+      document.getElementById('spoolCurrentWeight').value = sp.remainingWeight ?? 1000;
+      document.getElementById('spoolModal').classList.remove('hidden');
+      document.getElementById('spoolModal').classList.add('flex');
+    };
+
     window.closeSpoolModal = function() {
       document.getElementById('spoolModal').classList.add('hidden');
       document.getElementById('spoolModal').classList.remove('flex');
     };
+
     window.saveSpool = async function() {
       const name = document.getElementById('spoolName').value.trim();
       if (!name) return showToast("⚠️ Nome da bobina é obrigatório.");
+      const id = currentEditingSpoolId || `SPL-${Date.now().toString().slice(-4)}`;
+      const initW = Math.max(1, parseFloat(document.getElementById('spoolInitWeight').value || 1000));
+      const remW = Math.max(0, parseFloat(document.getElementById('spoolCurrentWeight').value || initW));
       const spool = {
-        id: `SPL-${Date.now().toString().slice(-4)}`,
-        name: name,
-        brand: document.getElementById('spoolBrand').value || 'Genérico',
+        id,
+        name,
+        brand: document.getElementById('spoolBrand').value.trim() || 'Genérico',
         material: document.getElementById('spoolMaterial').value,
-        colorHex: document.getElementById('spoolColorHex').value || '#4f46e5',
-        price: parseFloat(document.getElementById('spoolPrice').value || 20),
-        initialWeight: parseFloat(document.getElementById('spoolInitWeight').value || 1000),
-        remainingWeight: parseFloat(document.getElementById('spoolCurrentWeight').value || 1000)
+        colorHex: safeColor(document.getElementById('spoolColorHex').value),
+        price: Math.max(0, parseFloat(document.getElementById('spoolPrice').value || 20)),
+        initialWeight: initW,
+        remainingWeight: remW
       };
-      window.appState.spools.push(spool);
+      if (currentEditingSpoolId) {
+        window.appState.spools = window.appState.spools.map(s => s.id === id ? spool : s);
+      } else {
+        window.appState.spools = [...window.appState.spools, spool];
+      }
+      currentEditingSpoolId = null;
       await syncDocumentToCloud('spools', spool.id, spool);
       closeSpoolModal();
       renderSpools();
       populateDropdowns();
+      updateKPIs();
+      runLiveCalculator();
       showToast("Bobina guardada no inventário!");
     };
+
     window.adjustSpoolWeight = async function(id, delta) {
       const sp = window.appState.spools.find(s => s.id === id);
       if (!sp) return;
-      sp.remainingWeight = Math.max(0, Math.min(sp.initialWeight, sp.remainingWeight + delta));
-      await syncDocumentToCloud('spools', sp.id, sp);
+      const updated = { ...sp, remainingWeight: Math.max(0, Math.min(sp.initialWeight, sp.remainingWeight + delta)) };
+      window.appState.spools = window.appState.spools.map(s => s.id === id ? updated : s);
+      await syncDocumentToCloud('spools', updated.id, updated);
       renderSpools();
       updateKPIs();
-      showToast(`Stock atualizado: ${sp.remainingWeight}g`);
+      showToast(`Stock atualizado: ${updated.remainingWeight}g`);
     };
+
     window.deleteSpool = async function(id) {
       window.appState.spools = window.appState.spools.filter(s => s.id !== id);
       await deleteDocumentFromCloud('spools', id);
@@ -1746,6 +1959,8 @@
 
     // ================= AÇÕES DE IMPRESSORAS =================
     window.openNewPrinterModal = function() {
+      document.getElementById('printerName').value = '';
+      document.getElementById('printerModelInput').value = '';
       document.getElementById('printerModal').classList.remove('hidden');
       document.getElementById('printerModal').classList.add('flex');
     };
@@ -1756,37 +1971,35 @@
     window.savePrinter = async function() {
       const name = document.getElementById('printerName').value.trim();
       if (!name) return showToast("⚠️ Nome da impressora é obrigatório.");
+      const hours = Math.max(0, parseFloat(document.getElementById('printerHours').value || 0));
       const printer = {
         id: `PRN-${Date.now().toString().slice(-3)}`,
-        name: name,
-        model: document.getElementById('printerModelInput').value || 'Impressora 3D',
-        nozzle: document.getElementById('printerNozzle').value || '0.4 mm',
-        hourlyRate: parseFloat(document.getElementById('printerRate').value || 0.60),
-        powerKw: parseFloat(document.getElementById('printerPower').value || 0.15),
-        totalHours: parseFloat(document.getElementById('printerHours').value || 0),
+        name,
+        model: document.getElementById('printerModelInput').value.trim() || 'Impressora 3D',
+        nozzle: document.getElementById('printerNozzle').value.trim() || '0.4 mm',
+        hourlyRate: Math.max(0, parseFloat(document.getElementById('printerRate').value || 0.60)),
+        powerKw: Math.max(0, parseFloat(document.getElementById('printerPower').value || 0.15)),
+        totalHours: hours,
         status: document.getElementById('printerStatusSelect').value,
-        lastMaintHours: parseFloat(document.getElementById('printerHours').value || 0)
+        lastMaintHours: hours
       };
-      window.appState.printers.push(printer);
+      window.appState.printers = [...window.appState.printers, printer];
       await syncDocumentToCloud('printers', printer.id, printer);
       closePrinterModal();
       renderPrinters();
       populateDropdowns();
+      updateKPIs();
       showToast("Impressora registada com sucesso!");
     };
     window.setPrinterStatus = async function(id, status) {
-      const pr = window.appState.printers.find(p => p.id === id);
-      if (!pr) return;
-      pr.status = status;
-      await syncDocumentToCloud('printers', pr.id, pr);
+      await updatePrinter(id, { status });
       renderPrinters();
       updateKPIs();
     };
     window.logPrinterMaintenance = async function(id) {
       const pr = window.appState.printers.find(p => p.id === id);
       if (!pr) return;
-      pr.lastMaintHours = pr.totalHours;
-      await syncDocumentToCloud('printers', pr.id, pr);
+      await updatePrinter(id, { lastMaintHours: pr.totalHours });
       renderPrinters();
       showToast("Revisão de manutenção registada!");
     };
@@ -1800,14 +2013,52 @@
 
     // ================= DEFINIÇÕES & FIREBASE =================
     window.openSettingsModal = function() {
-      const input = document.getElementById('firebaseConfigInput');
-      input.value = localStorage.getItem('imagina3d_firebase_cfg') || '';
+      const s = window.appState.settings;
+      document.getElementById('firebaseConfigInput').value = localStorage.getItem('imagina3d_firebase_cfg') || '';
+      document.getElementById('set-energy').value = s.energyPriceKwh;
+      document.getElementById('set-labor').value = s.laborHourlyRate;
+      document.getElementById('set-margin').value = s.targetMargin;
+      document.getElementById('set-waste').value = s.defaultWastePercent;
+      document.getElementById('set-packaging').value = s.defaultPackagingCost;
+      document.getElementById('set-prep').value = s.defaultPrepMin;
+      document.getElementById('set-rounding').value = String(s.priceRounding);
+      document.getElementById('set-validity').value = s.quoteValidityDays;
+      document.getElementById('set-mw-proxy').value = s.mwProxyUrl || '';
+      mwRenderBookmarklet();
       document.getElementById('settingsModal').classList.remove('hidden');
       document.getElementById('settingsModal').classList.add('flex');
     };
     window.closeSettingsModal = function() {
       document.getElementById('settingsModal').classList.add('hidden');
       document.getElementById('settingsModal').classList.remove('flex');
+    };
+    window.saveSettingsFromModal = async function() {
+      const num = (id, fallback) => {
+        const v = parseFloat(document.getElementById(id).value);
+        return Number.isFinite(v) && v >= 0 ? v : fallback;
+      };
+      const proxy = document.getElementById('set-mw-proxy').value.trim();
+      if (proxy && !/^https:\/\//i.test(proxy)) {
+        return showToast("⚠️ O URL do proxy deve começar por https://");
+      }
+      window.appState.settings = {
+        ...window.appState.settings,
+        energyPriceKwh: num('set-energy', DEFAULT_SETTINGS.energyPriceKwh),
+        laborHourlyRate: num('set-labor', DEFAULT_SETTINGS.laborHourlyRate),
+        targetMargin: Math.min(95, num('set-margin', DEFAULT_SETTINGS.targetMargin)),
+        defaultWastePercent: Math.min(50, num('set-waste', DEFAULT_SETTINGS.defaultWastePercent)),
+        defaultPackagingCost: num('set-packaging', DEFAULT_SETTINGS.defaultPackagingCost),
+        defaultPrepMin: num('set-prep', DEFAULT_SETTINGS.defaultPrepMin),
+        priceRounding: num('set-rounding', DEFAULT_SETTINGS.priceRounding),
+        quoteValidityDays: Math.max(1, Math.round(num('set-validity', DEFAULT_SETTINGS.quoteValidityDays))),
+        mwProxyUrl: proxy
+      };
+      await syncDocumentToCloud('settings', 'global', window.appState.settings);
+      applySettingsToCalculator();
+      updateKPIs();
+      runLiveCalculator();
+      closeSettingsModal();
+      showToast("⚙️ Definições guardadas!");
     };
     window.saveFirebaseConfig = async function() {
       const cfgStr = document.getElementById('firebaseConfigInput').value.trim();
@@ -1820,9 +2071,9 @@
         showToast("⚠️ Formato JSON inválido para a configuração.");
       }
     };
-    window.clearFirebaseConfig = function() {
+    window.clearFirebaseConfig = async function() {
       localStorage.removeItem('imagina3d_firebase_cfg');
-      window.appState.firebaseActive = false;
+      await disconnectFirebase();
       updateSyncStatusUI(false);
       closeSettingsModal();
       showToast("Voltou para o Modo Local.");
@@ -1834,6 +2085,7 @@
         orders: window.appState.orders,
         spools: window.appState.spools,
         printers: window.appState.printers,
+        settings: window.appState.settings,
         exportedAt: new Date().toISOString()
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1853,12 +2105,15 @@
       reader.onload = async function(e) {
         try {
           const parsed = JSON.parse(e.target.result);
-          if (parsed.orders && parsed.spools && parsed.printers) {
+          if (Array.isArray(parsed.orders) && Array.isArray(parsed.spools) && Array.isArray(parsed.printers)) {
             window.appState.orders = parsed.orders;
             window.appState.spools = parsed.spools;
             window.appState.printers = parsed.printers;
+            if (parsed.settings) window.appState.settings = { ...DEFAULT_SETTINGS, ...parsed.settings };
             saveLocalData();
+            applySettingsToCalculator();
             renderAll();
+            runLiveCalculator();
             closeSettingsModal();
             showToast("Dados restaurados com sucesso!");
           } else {
@@ -1875,8 +2130,11 @@
       window.appState.orders = JSON.parse(JSON.stringify(DEMO_ORDERS));
       window.appState.spools = JSON.parse(JSON.stringify(DEMO_SPOOLS));
       window.appState.printers = JSON.parse(JSON.stringify(DEMO_PRINTERS));
+      window.appState.settings = { ...DEFAULT_SETTINGS };
       saveLocalData();
+      applySettingsToCalculator();
       renderAll();
+      runLiveCalculator();
       closeSettingsModal();
       showToast("Dados de demonstração repostos.");
     };
@@ -1935,6 +2193,9 @@
         toast.classList.add('translate-y-12', 'opacity-0');
       }, 3000);
     }
+
+    window.escapeHtml = escapeHtml;
+    window.showToast = showToast;
   </script>
 </body>
 </html>

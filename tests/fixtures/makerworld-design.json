@@ -1,0 +1,389 @@
+{
+  "id": 1400373,
+  "title": "Self Watering Seed Starter with Modular Grow Kit",
+  "coverUrl": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/design/2025-05-11_9f4182f5c66a7.png",
+  "defaultInstanceId": 1452154,
+  "instances": [
+    {
+      "id": 1452154,
+      "title": "Seed Starter Tray – 9 Cells",
+      "prediction": 39620,
+      "weight": 322,
+      "needAms": false,
+      "instanceFilaments": [
+        {
+          "type": "PLA",
+          "color": "#646941",
+          "usedM": "72.11",
+          "usedG": "230"
+        },
+        {
+          "type": "PLA",
+          "color": "#C0C0C0",
+          "usedM": "10.97",
+          "usedG": "35"
+        },
+        {
+          "type": "PETG",
+          "color": "#FFFFFF",
+          "usedM": "18.92",
+          "usedG": "57"
+        }
+      ],
+      "extention": {
+        "modelInfo": {
+          "compatibility": {
+            "devModelName": "BL-P001",
+            "devProductName": "X1 Carbon",
+            "nozzleDiameter": 0.4
+          },
+          "plates": [
+            {
+              "index": 1,
+              "name": "Bottom Tray (9-Cells)",
+              "prediction": 15026,
+              "weight": 107,
+              "thumbnail": {
+                "name": "plate_1.png",
+                "url": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/298919107/instance/plate_1.png"
+              },
+              "filaments": [
+                {
+                  "id": "1",
+                  "type": "PLA",
+                  "color": "#646941",
+                  "usedM": "33.60",
+                  "usedG": "107"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "name": "Seeding Tray (9-Cells)",
+              "prediction": 3461,
+              "weight": 35,
+              "thumbnail": {
+                "name": "plate_2.png",
+                "url": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/298919107/instance/plate_2.png"
+              },
+              "filaments": [
+                {
+                  "id": "2",
+                  "type": "PLA",
+                  "color": "#C0C0C0",
+                  "usedM": "10.97",
+                  "usedG": "35"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "name": "Pot Modules (V2)",
+              "prediction": 11996,
+              "weight": 123,
+              "thumbnail": {
+                "name": "plate_3.png",
+                "url": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/298919107/instance/plate_3.png"
+              },
+              "filaments": [
+                {
+                  "id": "1",
+                  "type": "PLA",
+                  "color": "#646941",
+                  "usedM": "38.51",
+                  "usedG": "123"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "name": "9-Cells Dome (Standard)",
+              "prediction": 9137,
+              "weight": 57,
+              "thumbnail": {
+                "name": "plate_4.png",
+                "url": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/298919107/instance/plate_4.png"
+              },
+              "filaments": [
+                {
+                  "id": "3",
+                  "type": "PETG",
+                  "color": "#FFFFFF",
+                  "usedM": "18.92",
+                  "usedG": "57"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 1452158,
+      "title": "Seed Starter Tray – 6 Cells",
+      "prediction": 29160,
+      "weight": 226,
+      "needAms": false,
+      "instanceFilaments": [
+        {
+          "type": "PLA",
+          "color": "#A57E60",
+          "usedM": "51.29",
+          "usedG": "164"
+        },
+        {
+          "type": "PLA",
+          "color": "#C0C0C0",
+          "usedM": "7.58",
+          "usedG": "25"
+        },
+        {
+          "type": "PETG",
+          "color": "#FFFFFF",
+          "usedM": "12.23",
+          "usedG": "37"
+        }
+      ],
+      "extention": {
+        "modelInfo": {
+          "compatibility": {
+            "devModelName": "BL-P001",
+            "devProductName": "X1 Carbon",
+            "nozzleDiameter": 0.4
+          },
+          "plates": [
+            {
+              "index": 1,
+              "name": "Bottom Tray (6 Cells)",
+              "prediction": 12328,
+              "weight": 82,
+              "thumbnail": {
+                "name": "plate_1.png",
+                "url": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/298919564/instance/plate_1.png"
+              },
+              "filaments": [
+                {
+                  "id": "1",
+                  "type": "PLA",
+                  "color": "#A57E60",
+                  "usedM": "25.58",
+                  "usedG": "82"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "name": "Seeding Tray (6 Cells)",
+              "prediction": 2588,
+              "weight": 25,
+              "thumbnail": {
+                "name": "plate_2.png",
+                "url": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/298919564/instance/plate_2.png"
+              },
+              "filaments": [
+                {
+                  "id": "2",
+                  "type": "PLA",
+                  "color": "#C0C0C0",
+                  "usedM": "7.58",
+                  "usedG": "25"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "name": "Pot Modules (V2)",
+              "prediction": 8128,
+              "weight": 82,
+              "thumbnail": {
+                "name": "plate_3.png",
+                "url": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/298919564/instance/plate_3.png"
+              },
+              "filaments": [
+                {
+                  "id": "1",
+                  "type": "PLA",
+                  "color": "#A57E60",
+                  "usedM": "25.71",
+                  "usedG": "82"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "name": "6 Cells Dome (Standard)",
+              "prediction": 6116,
+              "weight": 37,
+              "thumbnail": {
+                "name": "plate_4.png",
+                "url": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/298919564/instance/plate_4.png"
+              },
+              "filaments": [
+                {
+                  "id": "3",
+                  "type": "PETG",
+                  "color": "#FFFFFF",
+                  "usedM": "12.23",
+                  "usedG": "37"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 1452163,
+      "title": "Gardening Tools | Accessories",
+      "prediction": 42692,
+      "weight": 279,
+      "needAms": true,
+      "instanceFilaments": [
+        {
+          "type": "PLA",
+          "color": "#646941",
+          "usedM": "18.53",
+          "usedG": "60"
+        },
+        {
+          "type": "PETG",
+          "color": "#FFFFFF",
+          "usedM": "72.26",
+          "usedG": "219"
+        }
+      ],
+      "extention": {
+        "modelInfo": {
+          "compatibility": {
+            "devModelName": "BL-P001",
+            "devProductName": "X1 Carbon",
+            "nozzleDiameter": 0.4
+          },
+          "plates": [
+            {
+              "index": 1,
+              "name": "Gardening Tools",
+              "prediction": 6821,
+              "weight": 59,
+              "thumbnail": {
+                "name": "plate_1.png",
+                "url": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/298920224/instance/plate_1.png"
+              },
+              "filaments": [
+                {
+                  "id": "1",
+                  "type": "PLA",
+                  "color": "#646941",
+                  "usedM": "18.39",
+                  "usedG": "59"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "name": "6 Cells Dome (Standard)",
+              "prediction": 6116,
+              "weight": 37,
+              "thumbnail": {
+                "name": "plate_2.png",
+                "url": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/298920224/instance/plate_2.png"
+              },
+              "filaments": [
+                {
+                  "id": "2",
+                  "type": "PETG",
+                  "color": "#FFFFFF",
+                  "usedM": "12.23",
+                  "usedG": "37"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "name": "6 Cells Dome (Tall)",
+              "prediction": 7939,
+              "weight": 49,
+              "thumbnail": {
+                "name": "plate_3.png",
+                "url": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/298920224/instance/plate_3.png"
+              },
+              "filaments": [
+                {
+                  "id": "2",
+                  "type": "PETG",
+                  "color": "#FFFFFF",
+                  "usedM": "16.03",
+                  "usedG": "49"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "name": "Seed sower lid (AMS)",
+              "prediction": 1684,
+              "weight": 6,
+              "thumbnail": {
+                "name": "plate_4.png",
+                "url": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/298920224/instance/plate_4.png"
+              },
+              "filaments": [
+                {
+                  "id": "1",
+                  "type": "PLA",
+                  "color": "#646941",
+                  "usedM": "0.14",
+                  "usedG": "1"
+                },
+                {
+                  "id": "2",
+                  "type": "PETG",
+                  "color": "#FFFFFF",
+                  "usedM": "1.59",
+                  "usedG": "5"
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "name": "9 Cells Dome (Standard)",
+              "prediction": 9137,
+              "weight": 57,
+              "thumbnail": {
+                "name": "plate_5.png",
+                "url": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/298920224/instance/plate_5.png"
+              },
+              "filaments": [
+                {
+                  "id": "2",
+                  "type": "PETG",
+                  "color": "#FFFFFF",
+                  "usedM": "18.92",
+                  "usedG": "57"
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "name": "9 Cells Dome  (Tall)",
+              "prediction": 10995,
+              "weight": 71,
+              "thumbnail": {
+                "name": "plate_6.png",
+                "url": "https://makerworld.bblmw.com/makerworld/model/US300293b2858c3b/298920224/instance/plate_6.png"
+              },
+              "filaments": [
+                {
+                  "id": "2",
+                  "type": "PETG",
+                  "color": "#FFFFFF",
+                  "usedM": "23.49",
+                  "usedG": "71"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
