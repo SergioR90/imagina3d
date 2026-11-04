@@ -1138,15 +1138,25 @@
       localStorage.setItem('imagina3d_settings', JSON.stringify(window.appState.settings));
     }
 
+    // Configuração oficial do projeto Firebase (imagina3d-a2268)
+    const BUILTIN_FIREBASE_CONFIG = Object.freeze({
+      apiKey: "AIzaSyBK4v2qmKYx4H7JBYQYOiv3IHi4KIOSY54",
+      authDomain: "imagina3d-a2268.firebaseapp.com",
+      projectId: "imagina3d-a2268",
+      storageBucket: "imagina3d-a2268.firebasestorage.app",
+      messagingSenderId: "625471373113",
+      appId: "1:625471373113:web:c2e196d533593cd756b2e8",
+      measurementId: "G-LDWGNZX487"
+    });
+
     async function initFirebaseIfAvailable() {
       let cfgStr = localStorage.getItem('imagina3d_firebase_cfg');
       if (!cfgStr && typeof __firebase_config !== 'undefined') {
         cfgStr = __firebase_config;
       }
-
       if (!cfgStr) {
-        updateSyncStatusUI(false);
-        return;
+        // Usa a configuração predefinida do projeto automaticamente
+        cfgStr = JSON.stringify(BUILTIN_FIREBASE_CONFIG);
       }
 
       try {
@@ -2014,7 +2024,7 @@
     // ================= DEFINIÇÕES & FIREBASE =================
     window.openSettingsModal = function() {
       const s = window.appState.settings;
-      document.getElementById('firebaseConfigInput').value = localStorage.getItem('imagina3d_firebase_cfg') || '';
+      document.getElementById('firebaseConfigInput').value = localStorage.getItem('imagina3d_firebase_cfg') || JSON.stringify(BUILTIN_FIREBASE_CONFIG, null, 2);
       document.getElementById('set-energy').value = s.energyPriceKwh;
       document.getElementById('set-labor').value = s.laborHourlyRate;
       document.getElementById('set-margin').value = s.targetMargin;
