@@ -1619,7 +1619,11 @@
 
       document.getElementById('kpi-revenue').innerText = formatEur(revenue);
       document.getElementById('kpi-profit').innerText = formatEur(netProfit);
-      document.getElementById('kpi-margin-pct').innerText = `Margem média: ${marginPct}% · Concluído: ${formatEur(doneRevenue)}`;
+      const estimated = active.filter(o => Pricing.usesFallbackMaterialCost(o, spools)).length;
+      const marginEl = document.getElementById('kpi-margin-pct');
+      marginEl.innerText = `Margem média: ${marginPct}% · Concluído: ${formatEur(doneRevenue)}` +
+        (estimated ? ` · ⚠️ ${estimated} sem bobina (custo estimado)` : '');
+      marginEl.title = estimated ? 'Encomendas sem bobina associada usam um custo de material por defeito (0,02 €/g).' : '';
       document.getElementById('kpi-active-orders').innerText = active.length;
       document.getElementById('kpi-printing-count').innerText = `${printingCount} a imprimir${overdue ? ` · ⚠️ ${overdue} em atraso` : ''}`;
       document.getElementById('kpi-weight').innerText = `${(totalWeight / 1000).toFixed(2)} kg`;

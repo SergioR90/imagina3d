@@ -75,13 +75,21 @@
     };
   }
 
+  const findSpool = (order, spools) => (spools || []).find((x) => x.id === (order || {}).spoolId);
+  const hasUsableSpool = (spool) => Boolean(spool) && nonNeg(spool.initialWeight) > 0;
+
+  /** true se o custo de material da encomenda é uma estimativa (sem bobina válida associada). */
+  function usesFallbackMaterialCost(order, spools) {
+    return !hasUsableSpool(findSpool(order, spools));
+  }
+
   /** Custo direto estimado de uma encomenda já registada (peso/tempo são totais). */
   function estimateOrderCost(order, spools, printers, settings) {
     const o = order || {};
     const s = settings || {};
-    const spool = (spools || []).find((x) => x.id === o.spoolId);
+    const spool = findSpool(o, spools);
     const printer = (printers || []).find((x) => x.id === o.printerId) || DEFAULT_PRINTER;
-    const costPerG = spool && nonNeg(spool.initialWeight) > 0 ? nonNeg(spool.price) / spool.initialWeight : DEFAULT_COST_PER_G;
+    const costPerG = hasUsableSpool(spool) ? nonNeg(spool.price) / spool.initialWeight : DEFAULT_COST_PER_G;
 
     return computeQuote({
       materialLines: [{ grams: o.weightG, costPerG }],
@@ -98,5 +106,5 @@
     }).totalCost;
   }
 
-  return { computeQuote, roundPrice, estimateOrderCost };
+  return { computeQuote, roundPrice, estimateOrderCost, usesFallbackMaterialCost };
 });

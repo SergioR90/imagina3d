@@ -70,6 +70,14 @@ test('roundPrice', () => {
   close(P.roundPrice(12.01, 1), 13);
 });
 
+test('usesFallbackMaterialCost: sinaliza encomendas sem bobina válida', () => {
+  const spools = [{ id: 'S', price: 20, initialWeight: 1000 }, { id: 'Z', price: 20, initialWeight: 0 }];
+  assert.equal(P.usesFallbackMaterialCost({ spoolId: 'S' }, spools), false);
+  assert.equal(P.usesFallbackMaterialCost({ spoolId: 'X' }, spools), true);
+  assert.equal(P.usesFallbackMaterialCost({ spoolId: 'Z' }, spools), true);
+  assert.equal(P.usesFallbackMaterialCost({}, []), true);
+});
+
 test('estimateOrderCost usa a bobina e impressora da encomenda', () => {
   const order = { weightG: 100, printTimeH: 2, spoolId: 'S', printerId: 'P', quantity: 1 };
   const spools = [{ id: 'S', price: 20, initialWeight: 1000 }];
