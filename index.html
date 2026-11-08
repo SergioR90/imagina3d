@@ -798,6 +798,20 @@
         <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
+      <!-- Conta Google (necessária para a sincronização na nuvem) -->
+      <div class="space-y-2 mb-5 pb-5 border-b border-gray-100 dark:border-notion-darkBorder">
+        <label class="text-xs font-semibold text-gray-800 dark:text-gray-200">Conta de sincronização</label>
+        <p id="authStatusText" class="text-[11px] text-gray-500 dark:text-gray-400">Firebase não configurado.</p>
+        <div class="flex gap-2">
+          <button id="googleSignInBtn" onclick="signInWithGoogle()" class="hidden px-3 py-1.5 bg-white dark:bg-notion-darkCard border border-gray-300 dark:border-notion-darkBorder text-gray-700 dark:text-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50 dark:hover:bg-notion-darkHover transition">
+            <i class="fa-brands fa-google"></i> Entrar com Google
+          </button>
+          <button id="googleSignOutBtn" onclick="signOutGoogle()" class="hidden px-3 py-1.5 text-xs text-red-500 hover:underline">
+            Terminar sessão
+          </button>
+        </div>
+      </div>
+
       <!-- Configuração Firebase -->
       <div class="space-y-3">
         <div class="flex items-center justify-between">
@@ -904,7 +918,7 @@
   <script type="module">
     // Importações Oficiais Firebase SDK v11 (Modular)
     import { initializeApp, getApps, deleteApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // Constantes e Estados Globais
@@ -1072,6 +1086,7 @@
     let auth = null;
     let fbApp = null;
     let unsubscribers = [];
+    let authUnsub = null;
 
     // ================= INICIALIZAÇÃO =================
     window.onload = async () => {
@@ -1167,21 +1182,24 @@
         auth = getAuth(fbApp);
         db = getFirestore(fbApp);
 
-        // Tenta autenticação (se anónimo estiver ativo), senão prossegue diretamente com as regras do Firestore
-        try {
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
+        // A sincronização só arranca com sessão Google iniciada (as regras do Firestore exigem-no).
+        // Sem sessão a app continua em modo local.
+        updateSyncStatusUI(false, null);
+        let firstAuthEvent = true;
+        authUnsub = onAuthStateChanged(auth, (user) => {
+          const wasFirst = firstAuthEvent;
+          firstAuthEvent = false;
+          stopRealtimeListeners();
+          if (user) {
+            window.appState.firebaseActive = true;
+            updateSyncStatusUI(true, user);
+            setupRealtimeListeners();
+            if (!wasFirst) showToast("☁️ Ligado ao Firebase em tempo real!");
           } else {
-            await signInAnonymously(auth);
+            window.appState.firebaseActive = false;
+            updateSyncStatusUI(false, null);
           }
-        } catch (authErr) {
-          console.warn("Autenticação anónima indisponível, a operar com regras abertas do Firestore:", authErr);
-        }
-
-        window.appState.firebaseActive = true;
-        updateSyncStatusUI(true);
-        setupRealtimeListeners();
-        showToast("☁️ Ligado ao Firebase em tempo real!");
+        });
       } catch (err) {
         console.warn("Aviso Firebase:", err);
         window.appState.firebaseActive = false;
@@ -1190,9 +1208,57 @@
       }
     }
 
-    async function disconnectFirebase() {
+    function stopRealtimeListeners() {
       unsubscribers.forEach(unsub => unsub());
       unsubscribers = [];
+    }
+
+    // Erro de permissão = sessão com uma conta que as regras não autorizam
+    async function handleCloudError(label, err) {
+      console.error(`Erro no realtime ${label}:`, err);
+      if (err && err.code === 'permission-denied') {
+        showToast("⚠️ Esta conta Google não tem acesso aos dados. Entra com a conta autorizada.");
+        if (auth && auth.currentUser) {
+          try { await signOut(auth); } catch (e) { console.warn(e); }
+        }
+        return;
+      }
+      showToast(`⚠️ Erro de sincronização (${label}): ${(err && err.code) || 'desconhecido'}`);
+    }
+
+    window.signInWithGoogle = async function() {
+      if (!auth) {
+        showToast("⚠️ Firebase não está configurado.");
+        return;
+      }
+      try {
+        await signInWithPopup(auth, new GoogleAuthProvider());
+        closeSettingsModal();
+      } catch (err) {
+        const msg = {
+          'auth/popup-blocked': 'O browser bloqueou a janela de login. Permite pop-ups para este site.',
+          'auth/popup-closed-by-user': 'Login cancelado.',
+          'auth/cancelled-popup-request': 'Login cancelado.',
+          'auth/unauthorized-domain': 'Domínio não autorizado: adiciona-o em Firebase → Authentication → Definições → Domínios autorizados.',
+          'auth/operation-not-allowed': 'Ativa o fornecedor Google em Firebase → Authentication → Método de início de sessão.'
+        }[err.code] || `Falha no login (${err.code || err.message}).`;
+        showToast(`⚠️ ${msg}`);
+      }
+    };
+
+    window.signOutGoogle = async function() {
+      if (!auth) return;
+      try {
+        await signOut(auth);
+        showToast("Sessão terminada. A app continua em modo local.");
+      } catch (err) {
+        showToast(`⚠️ Não foi possível terminar a sessão (${err.code || err.message}).`);
+      }
+    };
+
+    async function disconnectFirebase() {
+      if (authUnsub) { authUnsub(); authUnsub = null; }
+      stopRealtimeListeners();
       if (fbApp) {
         try { await deleteApp(fbApp); } catch (err) { console.warn('Erro ao terminar app Firebase:', err); }
       }
@@ -1217,10 +1283,7 @@
           return;
         }
         onData(snapshot.docs.map(d => d.data()));
-      }, (err) => {
-        console.error(`Erro no realtime ${name}:`, err);
-        showToast(`⚠️ Erro de sincronização (${name}): ${err.code || 'desconhecido'}`);
-      });
+      }, (err) => handleCloudError(name, err));
     }
 
     function setupRealtimeListeners() {
@@ -1255,7 +1318,7 @@
           window.appState.settings = { ...DEFAULT_SETTINGS, ...snap.data() };
           saveLocalData();
           runLiveCalculator();
-        }, (err) => console.error('Erro no realtime settings:', err))
+        }, (err) => handleCloudError('settings', err))
       ];
     }
 
@@ -1283,15 +1346,23 @@
       }
     }
 
-    function updateSyncStatusUI(isCloud) {
+    // user: sessão Google ativa; configured: há uma app Firebase ligada (permite oferecer o login)
+    function updateSyncStatusUI(isCloud, user) {
       const dot = document.getElementById('syncDot');
       const text = document.getElementById('syncText');
+      const configured = Boolean(auth);
       if (isCloud) {
         dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
         text.innerText = "Nuvem Sincronizada";
       } else {
         dot.className = "w-2 h-2 rounded-full bg-amber-500";
-        text.innerText = "Modo Local";
+        text.innerText = configured ? "Entrar na nuvem" : "Modo Local";
+      }
+      const account = document.getElementById('authStatusText');
+      if (account) {
+        account.textContent = user ? `Sessão iniciada: ${user.email}` : (configured ? 'Sem sessão — a app funciona em modo local.' : 'Firebase não configurado.');
+        document.getElementById('googleSignInBtn').classList.toggle('hidden', Boolean(user) || !configured);
+        document.getElementById('googleSignOutBtn').classList.toggle('hidden', !user);
       }
     }
 

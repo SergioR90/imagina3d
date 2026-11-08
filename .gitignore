@@ -1,2 +1,4 @@
 imagina3d_dashboard (1).html
 node_modules/
+.agents/
+skills-lock.json

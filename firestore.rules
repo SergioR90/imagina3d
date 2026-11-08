@@ -1,8 +1,16 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Apenas o dono (sessão Google com email verificado) lê e escreve.
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'sergio8078@gmail.com';
+    }
+
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if isOwner();
     }
   }
 }

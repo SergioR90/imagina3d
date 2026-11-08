@@ -20,7 +20,7 @@ const MAKERWORLD_API = 'https://makerworld.com/api/v1/design-service/design/';
 const CACHE_SECONDS = 3600;
 
 function corsHeaders(origin) {
-  const allowed = ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.netlify.app');
+  const allowed = ALLOWED_ORIGINS.includes(origin);
   return {
     'Access-Control-Allow-Origin': allowed ? origin : ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
