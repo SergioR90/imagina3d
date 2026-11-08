@@ -128,7 +128,6 @@
     const lines = [
       '🧾 Orçamento Imagina3D',
       `Peça: ${imp ? imp.title : 'Peça personalizada'}`,
-      imp ? `Modelo: ${imp.url}` : null,
       `Quantidade: ${calc.quantity} un.`,
       `Material: ${materials} · ${Math.round(calc.weightG * calc.quantity)} g`,
       `Tempo de impressão estimado: ${duration}`,
@@ -136,6 +135,93 @@
       `Orçamento válido por ${settings.quoteValidityDays} dias.`
     ];
     return lines.filter(Boolean).join('\n');
+  }
+
+  const esc = (s) => window.escapeHtml(s);
+  const isHttps = (u) => typeof u === 'string' && /^https:\/\/[^\s"'<>]+$/i.test(u);
+
+  /**
+   * Documento de orçamento para o cliente (HTML autónomo, pronto a imprimir / guardar em PDF).
+   * Mostra só fotos de referência: sem link do modelo e sem custos internos ou margem.
+   */
+  function buildClientQuoteHtml(calc, now) {
+    const imp = window.calcImport;
+    const settings = window.appState.settings;
+    const date = now || new Date();
+    const validUntil = new Date(date.getTime() + settings.quoteValidityDays * 86400000);
+    const day = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
+    const materials = Array.from(new Set(calc.lines.map((l) => l.type).filter(Boolean))).join(', ') || 'Filamento';
+    const duration = window.MakerWorld.formatDuration(calc.timeH * calc.quantity * 3600);
+    const title = imp ? imp.title : 'Peça personalizada';
+    const photos = ((imp && imp.photos) || []).filter(isHttps);
+
+    const row = (label, value) => `<tr><th>${esc(label)}</th><td>${esc(value)}</td></tr>`;
+    const gallery = photos.length
+      ? `<h2>Fotos de referência</h2><div class="photos">${photos
+          .map((u) => `<img src="${esc(u)}" alt="Foto de referência" referrerpolicy="no-referrer">`)
+          .join('')}</div>`
+      : '';
+
+    return `<!doctype html>
+<html lang="pt-PT"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orçamento Imagina3D</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1f2937;margin:0;background:#f3f4f6}
+  .page{max-width:760px;margin:24px auto;background:#fff;padding:40px;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+  header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #4f46e5;padding-bottom:16px}
+  header h1{margin:0;font-size:26px;color:#4f46e5}
+  header .meta{text-align:right;font-size:13px;color:#6b7280}
+  h2{font-size:15px;margin:32px 0 10px;color:#374151}
+  .piece{font-size:20px;font-weight:700;margin:24px 0 4px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;font-weight:500;color:#6b7280;padding:8px 0;width:45%;border-bottom:1px solid #f0f0f0}
+  td{padding:8px 0;border-bottom:1px solid #f0f0f0}
+  .price{margin:24px 0 0;background:#eef2ff;border-radius:10px;padding:18px 20px;display:flex;justify-content:space-between;align-items:center}
+  .price .label{font-size:14px;color:#4338ca}
+  .price .value{font-size:30px;font-weight:800;color:#3730a3}
+  .price .unit{font-size:12px;color:#6366f1;text-align:right}
+  .photos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .photos img{display:block;width:100%;height:220px;object-fit:cover;border-radius:8px;background:#f3f4f6}
+  footer{margin-top:28px;font-size:12px;color:#6b7280;border-top:1px solid #e5e7eb;padding-top:12px}
+  .actions{max-width:760px;margin:16px auto 0;text-align:right}
+  .actions button{background:#4f46e5;color:#fff;border:0;border-radius:8px;padding:10px 16px;font-size:14px;cursor:pointer}
+  @media print{body{background:#fff}.page{box-shadow:none;margin:0;padding:0}.actions{display:none}}
+  @media (max-width:560px){.page{padding:20px;margin:0;border-radius:0}.photos{grid-template-columns:repeat(2,1fr)}.photos img{height:160px}}
+</style></head><body>
+<div class="actions"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>
+<div class="page">
+  <header>
+    <h1>Imagina3D</h1>
+    <div class="meta">Orçamento<br>${esc(day.format(date))}</div>
+  </header>
+  <div class="piece">${esc(title)}</div>
+  <table>
+    ${row('Quantidade', `${calc.quantity} un.`)}
+    ${row('Material', `${materials} · ${Math.round(calc.weightG * calc.quantity)} g`)}
+    ${row('Tempo de impressão estimado', duration)}
+  </table>
+  <div class="price">
+    <span class="label">Valor total</span>
+    <span><div class="value">${esc(fmt(calc.finalPrice))}</div>${calc.quantity > 1 ? `<div class="unit">${esc(fmt(calc.unitPrice))} / un.</div>` : ''}</span>
+  </div>
+  ${gallery}
+  <footer>Orçamento válido até ${esc(day.format(validUntil))} (${settings.quoteValidityDays} dias). As imagens são meramente ilustrativas.</footer>
+</div>
+</body></html>`;
+  }
+
+  function openClientQuote() {
+    const html = buildClientQuoteHtml(runLiveCalculator());
+    const w = window.open('', '_blank');
+    if (!w) {
+      window.showToast('⚠️ O browser bloqueou a janela. Permite pop-ups para este site.');
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
   }
 
   async function copyQuote() {
@@ -168,6 +254,8 @@
     runLiveCalculator,
     createOrderFromCalculator,
     copyQuote,
+    openClientQuote,
+    buildClientQuoteHtml,
     applySettingsToCalculator
   });
 })();

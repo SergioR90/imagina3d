@@ -7,6 +7,7 @@
   'use strict';
 
   const FETCH_TIMEOUT_MS = 9000;
+  const MAX_QUOTE_PHOTOS = 6;
   const MW = () => window.MakerWorld;
   const esc = (s) => window.escapeHtml(s);
   const $ = (id) => document.getElementById(id);
@@ -176,8 +177,13 @@
       spoolId: state.spoolMap[filamentKey(f)] || MW().matchSpool(f, spools) || fallbackSpool
     }));
 
+    // Fotos de referência para o orçamento do cliente: capa + miniaturas das placas selecionadas
+    const selectedPlates = profile.plates.filter((p) => state.plates.includes(p.index));
+    const photos = Array.from(new Set([state.design.coverUrl, ...selectedPlates.map((p) => p.thumb)].filter(Boolean))).slice(0, MAX_QUOTE_PHOTOS);
+
     window.calcImport = Object.freeze({
       title: state.design.title,
+      photos: Object.freeze(photos),
       url: MW().buildModelUrl(state.design.id, state.profileId),
       profileTitle: profile.title,
       plateCount: summary.plateCount,

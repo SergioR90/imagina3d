@@ -149,4 +149,33 @@ test('Fluxo completo: importar via JSON colado -> pré-preenche calculadora -> c
   await win.copyQuote();
   assert.match(getCopied(), /Orçamento Imagina3D/);
   assert.match(getCopied(), /214 g/);
+  assert.doesNotMatch(getCopied(), /makerworld/i, 'o texto do cliente não pode ter o link do modelo');
+});
+
+test('Orçamento do cliente: fotos de referência, sem link do modelo nem custos internos', () => {
+  const { win, getEl } = createDomSandbox();
+  getEl('mw-url').value = 'https://makerworld.com/en/models/1400373-seed#profileId-1452154';
+  getEl('mw-paste').value = JSON.stringify(RAW);
+  win.mwImportFromPaste();
+
+  assert.ok(win.calcImport.photos.length > 0, 'a importação deve guardar fotos');
+  assert.ok(win.calcImport.photos.length <= 6);
+  assert.ok(win.calcImport.photos.every((u) => /^https:\/\//.test(u)));
+
+  const calc = win.runLiveCalculator();
+  const html = win.buildClientQuoteHtml(calc, new Date('2026-11-08T12:00:00Z'));
+
+  assert.match(html, /Fotos de referência/);
+  assert.equal((html.match(/<img /g) || []).length, win.calcImport.photos.length);
+  assert.doesNotMatch(html, /makerworld\.com\/(en|pt)\/models/i, 'sem link do modelo');
+  assert.doesNotMatch(html, /href=/i, 'sem links');
+  assert.doesNotMatch(html, /Markup|Lucro|Custo|margem/i, 'sem dados internos');
+  assert.match(html, /válido até/);
+});
+
+test('Orçamento do cliente: sem importação não mostra galeria', () => {
+  const { win } = createDomSandbox();
+  const html = win.buildClientQuoteHtml(win.runLiveCalculator(), new Date('2026-11-08T12:00:00Z'));
+  assert.doesNotMatch(html, /Fotos de referência/);
+  assert.match(html, /Peça personalizada/);
 });
